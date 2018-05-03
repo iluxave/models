@@ -21,8 +21,11 @@ from __future__ import print_function
 import os
 import sys
 
+from absl import app as absl_app
+from absl import flags
 import tensorflow as tf  # pylint: disable=g-bad-import-order
 
+from official.utils.flags import core as flags_core
 from official.resnet import resnet_model
 from official.resnet import resnet_run_loop
 
@@ -176,8 +179,6 @@ class Cifar10Model(resnet_model.Model):
         conv_stride=1,
         first_pool_size=None,
         first_pool_stride=None,
-        second_pool_size=8,
-        second_pool_stride=1,
         block_sizes=[num_blocks] * 3,
         block_strides=[1, 2, 2],
         final_size=64,
@@ -226,25 +227,27 @@ def cifar10_model_fn(features, labels, mode, params):
   )
 
 
-def main(argv):
-  parser = resnet_run_loop.ResnetArgParser()
-  # Set defaults that are reasonable for this model.
-  parser.set_defaults(data_dir='/tmp/cifar10_data',
-                      model_dir='/tmp/cifar10_model',
-                      resnet_size=32,
-                      train_epochs=250,
-                      epochs_between_evals=10,
-                      batch_size=128)
+def define_cifar_flags():
+  resnet_run_loop.define_resnet_flags()
+  flags.adopt_module_key_flags(resnet_run_loop)
+  flags_core.set_defaults(data_dir='/tmp/cifar10_data',
+                          model_dir='/tmp/cifar10_model',
+                          resnet_size='32',
+                          train_epochs=250,
+                          epochs_between_evals=10,
+                          batch_size=128)
 
-  flags = parser.parse_args(args=argv[1:])
 
-  input_function = flags.use_synthetic_data and get_synth_input_fn() or input_fn
+def main(flags_obj):
+  input_function = (flags_obj.use_synthetic_data and get_synth_input_fn()
+                    or input_fn)
 
   resnet_run_loop.resnet_main(
-      flags, cifar10_model_fn, input_function,
+      flags_obj, cifar10_model_fn, input_function,
       shape=[_HEIGHT, _WIDTH, _NUM_CHANNELS])
 
 
 if __name__ == '__main__':
   tf.logging.set_verbosity(tf.logging.INFO)
-  main(argv=sys.argv)
+  define_cifar_flags()
+  absl_app.run(main)
