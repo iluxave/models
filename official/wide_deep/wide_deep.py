@@ -17,10 +17,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
 import os
 import shutil
-import sys
 
 from absl import app as absl_app
 from absl import flags
@@ -217,7 +215,13 @@ def export_model(model, model_type, export_dir):
   model.export_savedmodel(export_dir, example_input_fn)
 
 
-def main(flags_obj):
+def run_wide_deep(flags_obj):
+  """Run Wide-Deep training and eval loop.
+
+  Args:
+    flags_obj: An object containing parsed flag values.
+  """
+
   # Clean up the model directory if present
   shutil.rmtree(flags_obj.model_dir, ignore_errors=True)
   model = build_estimator(flags_obj.model_dir, flags_obj.model_type)
@@ -258,6 +262,10 @@ def main(flags_obj):
   # Export the model
   if flags_obj.export_dir is not None:
     export_model(model, flags_obj.model_type, flags_obj.export_dir)
+
+
+def main(_):
+  run_wide_deep(flags.FLAGS)
 
 
 if __name__ == '__main__':

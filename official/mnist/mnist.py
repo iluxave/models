@@ -17,9 +17,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import argparse
-import sys
-
 from absl import app as absl_app
 from absl import flags
 import tensorflow as tf  # pylint: disable=g-bad-import-order
@@ -90,7 +87,7 @@ def create_model(data_format):
 
 
 def define_mnist_flags():
-  flags_core.define_base()
+  flags_core.define_base(multi_gpu=True, num_gpu=False)
   flags_core.define_image()
   flags.adopt_module_key_flags(flags_core)
   flags_core.set_defaults(data_dir='/tmp/mnist_data',
@@ -185,7 +182,13 @@ def validate_batch_size_for_multi_gpu(batch_size):
     raise ValueError(err)
 
 
-def main(flags_obj):
+def run_mnist(flags_obj):
+  """Run MNIST training and eval loop.
+
+  Args:
+    flags_obj: An object containing parsed flag values.
+  """
+
   model_function = model_fn
 
   if flags_obj.multi_gpu:
@@ -249,6 +252,10 @@ def main(flags_obj):
         'image': image,
     })
     mnist_classifier.export_savedmodel(flags_obj.export_dir, input_fn)
+
+
+def main(_):
+  run_mnist(flags.FLAGS)
 
 
 if __name__ == '__main__':
